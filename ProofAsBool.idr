@@ -59,7 +59,7 @@ isGT (S k) (S j) with (isGT k j)
 
 
 succNotLTzero : LT (S k) 0 -> Void
-succNotLTzero x = ?succNotLTzero_rhs
+
 
 
 
