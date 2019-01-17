@@ -52,6 +52,43 @@ isLT (S k) (S j) with (isLT k j)
   isLT (S k) (S j) | (Yes prf) = Yes (LTESucc prf)
   isLT (S k) (S j) | (No contra) = No (contra . fromLteSucc)
 
+
+||| A decision procedure for `DecEq Nat`
+||| @ m the first number
+||| @ n the second number
+isEqNat : (m : Nat) -> (n : Nat) -> Dec (m = n)
+isEqNat m n = decEq m n
+
+||| Proofs that `m` is not equal to `n`
+||| @ m the first number
+||| @ n the second number
+data NotEq : (m, n : Nat) -> Type where
+  ||| Zero is the smallest Nat
+  NotEqZeroRight : NotEq Z    (S right)
+  NotEqZeroLeft : NotEq (S left) Z
+  ||| If n /= m, then n + 1 /= m + 1
+  NotEqSucc : NotEq left right -> NotEq (S left) (S right)
+
+||| Not (Z /= Z)
+zeroNotNotEqZero : NotEq 0 0 -> Void
+zeroNotNotEqZero NotEqZeroRight impossible
+zeroNotNotEqZero (NotEqSucc _) impossible
+
+||| If two numbers are not equal, then neither are their predecessors
+fromNotEqSucc : NotEq (S k) (S j) -> NotEq k j
+fromNotEqSucc (NotEqSucc x) = x
+
+||| A decision procedure for `NotEq`
+||| @ m the first number
+||| @ n the second number
+isNotEq : (m : Nat) -> (n : Nat) -> Dec (NotEq m n)
+isNotEq Z Z = No zeroNotNotEqZero
+isNotEq Z (S k) = Yes NotEqZeroRight
+isNotEq (S k) Z = Yes NotEqZeroLeft
+isNotEq (S k) (S j) with (isNotEq k j)
+  isNotEq (S k) (S j) | (Yes prf) = Yes (NotEqSucc prf)
+  isNotEq (S k) (S j) | (No contra) = No (contra . fromNotEqSucc)
+
 ||| Proof based underlying implementation of the if ... then ... else ... syntax
 ||| @ b the condition on the if
 ||| @ t the value if b is Yes
