@@ -1,17 +1,34 @@
-module ProofAsBool
+module MoreNatProofs
 
 %access public export
 %default total
 
+||| A decision procedure for `DecEq Nat`
+||| @ m the first number
+||| @ n the second number
+isEqNat : (m : Nat) -> (n : Nat) -> Dec (m = n)
+isEqNat m n = decEq m n
 
+||| Proofs that `m` is not equal to `n`
+||| @ m the first number
+||| @ n the second number
+NotEq : (m, n : Nat) -> Type
+NotEq m n = Not (m=n)
 
-||| Proof based underlying implementation of the if ... then ... else ... syntax
-||| @ b the condition on the if
-||| @ t the value if b is Yes
-||| @ e the falue if b is No
-ifThenElse : (b : Dec prop) -> (t : Lazy a) -> (e : Lazy a) -> a
-ifThenElse (Yes prf) t e = t
-ifThenElse (No contra) t e = e
+||| Not (m = n) implies m /= n
+notEqImpliesNotEq : (contra : (m = n) -> Void) -> ((m = n) -> Void)
+notEqImpliesNotEq contra Refl = contra Refl
+
+||| (m = n) implies Not (m /= n)
+eqImpliesNotNotEq : (prf : m = n) -> (((m = n) -> Void) -> Void)
+eqImpliesNotNotEq Refl f = f Refl
+
+||| A decision procedure for `NotEq`
+isNotEq : (m : Nat) -> (n : Nat) -> Dec (NotEq m n)
+isNotEq m n = case (isEqNat m n) of
+                   (Yes prf) => No (eqImpliesNotNotEq prf)
+                   (No contra) => Yes (notEqImpliesNotEq contra)
+
 
 ||| A successor is always greater than or equal zero
 succGTEzero : GTE (S k) Z
@@ -44,6 +61,7 @@ zeroNotLTZero (LTESucc _) impossible
 succGTZero : LTE 1 (S k)
 succGTZero = LTESucc LTEZero
 
+
 ||| A decision procedure for `GT`
 isGT : (m : Nat) -> (n : Nat) -> Dec (GT m n)
 isGT Z Z = No zeroNotLTZero
@@ -61,40 +79,3 @@ isLT (S k) Z = No succNotLTEzero
 isLT (S k) (S j) with (isLT k j)
   isLT (S k) (S j) | (Yes prf) = Yes (LTESucc prf)
   isLT (S k) (S j) | (No contra) = No (contra . fromLteSucc)
-
-
-||| A decision procedure for `DecEq Nat`
-||| @ m the first number
-||| @ n the second number
-isEqNat : (m : Nat) -> (n : Nat) -> Dec (m = n)
-isEqNat m n = decEq m n
-
-||| Proofs that `m` is not equal to `n`
-||| @ m the first number
-||| @ n the second number
-data NotEq : (m, n : Nat) -> Type where
-  ||| Zero is the smallest Nat
-  NotEqZeroRight : NotEq Z    (S right)
-  NotEqZeroLeft : NotEq (S left) Z
-  ||| If n /= m, then n + 1 /= m + 1
-  NotEqSucc : NotEq left right -> NotEq (S left) (S right)
-
-||| Not (Z /= Z)
-zeroNotNotEqZero : NotEq 0 0 -> Void
-zeroNotNotEqZero NotEqZeroRight impossible
-zeroNotNotEqZero (NotEqSucc _) impossible
-
-||| If two numbers are not equal, then neither are their predecessors
-fromNotEqSucc : NotEq (S k) (S j) -> NotEq k j
-fromNotEqSucc (NotEqSucc x) = x
-
-||| A decision procedure for `NotEq`
-||| @ m the first number
-||| @ n the second number
-isNotEq : (m : Nat) -> (n : Nat) -> Dec (NotEq m n)
-isNotEq Z Z = No zeroNotNotEqZero
-isNotEq Z (S k) = Yes NotEqZeroRight
-isNotEq (S k) Z = Yes NotEqZeroLeft
-isNotEq (S k) (S j) with (isNotEq k j)
-  isNotEq (S k) (S j) | (Yes prf) = Yes (NotEqSucc prf)
-  isNotEq (S k) (S j) | (No contra) = No (contra . fromNotEqSucc)
