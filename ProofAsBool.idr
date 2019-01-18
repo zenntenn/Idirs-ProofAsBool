@@ -3,6 +3,8 @@ module ProofAsBool
 %access public export
 %default total
 
+
+
 ||| Proof based underlying implementation of the if ... then ... else ... syntax
 ||| @ b the condition on the if
 ||| @ t the value if b is Yes
@@ -10,25 +12,6 @@ module ProofAsBool
 ifThenElse : (b : Dec prop) -> (t : Lazy a) -> (e : Lazy a) -> a
 ifThenElse (Yes prf) t e = t
 ifThenElse (No contra) t e = e
-
-
-||| Proof based logical AND
-||| @ a the first proof
-||| @ b the second proof
-AND : (a : Dec prop) -> (b : Dec prop) -> Dec prop
-AND (Yes prf1) (Yes _) = Yes prf1
-AND _ (No contra) = No contra
-AND (No contra) _ = No contra
-
-||| Proof based logical OR
-||| @ a the first proof
-||| @ b the second proof
-OR : (a : Dec prop) -> (b : Dec prop) -> Dec prop
-OR (Yes prf) _ = Yes prf
-OR _ (Yes prf) = Yes prf
-OR (No contra) (No _) = No contra
-
--- I'm prety sure that a logical NOT in this fashion would violate intuitionistic logic, so I've given up on trying to do NOT or XOR or whatnot
 
 ||| A successor is always greater than or equal zero
 succGTEzero : GTE (S k) Z
