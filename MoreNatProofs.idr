@@ -6,8 +6,8 @@ module MoreNatProofs
 ||| A decision procedure for `DecEq Nat`
 ||| @ m the first number
 ||| @ n the second number
-isEqNat : (m : Nat) -> (n : Nat) -> Dec (m = n)
-isEqNat m n = decEq m n
+isEq : (m : Nat) -> (n : Nat) -> Dec (m = n)
+isEq m n = decEq m n
 
 ||| Proofs that `m` is not equal to `n`
 ||| @ m the first number
@@ -25,7 +25,7 @@ eqImpliesNotNotEq Refl f = f Refl
 
 ||| A decision procedure for `NotEq`
 isNotEq : (m : Nat) -> (n : Nat) -> Dec (NotEq m n)
-isNotEq m n = case (isEqNat m n) of
+isNotEq m n = case (isEq m n) of
                    (Yes prf) => No (eqImpliesNotNotEq prf)
                    (No contra) => Yes (notEqImpliesNotEq contra)
 
