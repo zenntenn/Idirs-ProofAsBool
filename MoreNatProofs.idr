@@ -9,6 +9,9 @@ module MoreNatProofs
 isEq : (m : Nat) -> (n : Nat) -> Dec (m = n)
 isEq m n = decEq m n
 
+eQImpliesEq : {m, n : Nat} -> (m = n) -> (n = m)
+eQImpliesEq {m = n} {n = n} Refl = Refl
+
 ||| Proofs that `m` is not equal to `n`
 ||| @ m the first number
 ||| @ n the second number
@@ -79,3 +82,37 @@ isLT (S k) Z = No succNotLTEzero
 isLT (S k) (S j) with (isLT k j)
   isLT (S k) (S j) | (Yes prf) = Yes (LTESucc prf)
   isLT (S k) (S j) | (No contra) = No (contra . fromLteSucc)
+
+eqImpliesLTE : {n, k : Nat} -> (n = k) -> LTE n k
+eqImpliesLTE {n = Z} Refl = LTEZero
+eqImpliesLTE {n = (S (S (S k)))} Refl = LTESucc (LTESucc (LTESucc (eqImpliesLTE Refl)))
+
+eqABImpliesEqBA : (prf : n = k) -> k = n
+eqABImpliesEqBA Refl = Refl
+
+notLTEandEqImpossible : {n, k : Nat} -> (contra : LTE n k -> Void) -> (prf : n = k) -> LTE k n
+notLTEandEqImpossible {n=n} {k=k} contra prf = eqImpliesLTE (eqABImpliesEqBA prf)
+
+-- notLTEAndNotEqImpliesGT : {n, k : Nat} -> (contra : (n = k) -> Void) -> (contra1 : LTE n k -> Void) -> GT n k
+
+
+
+gTImpliesLTE : {n, k : Nat} -> (prf : GT n k) -> LTE k n
+gTImpliesLTE {n = (S left)} {k = (S right)} (LTESucc x) = LTESucc (gTImpliesLTE x)
+
+
+
+eQAndNotEqImpossible : {n, k : Nat} -> (contra1 : (n = k) -> Void) -> (n = k) -> LTE (S k) n
+eQAndNotEqImpossible {n} {k} contra1 prf = void (contra1 prf)
+
+notLTEAndNotEqAndNotGTImpossible : {n, k : Nat} -> (contra2 : GT n k -> Void) -> (contra1 : (n = k) -> Void) -> (contra : LTE n k -> Void) -> LTE k n
+notLTEAndNotEqAndNotGTImpossible {n = n} {k = k} contra2 contra1 contra = gTImpliesLTE (case isEq k n of
+                                                                                             (Yes prf) => eQAndNotEqImpossible contra1 (eQImpliesEq prf)
+                                                                                             (No contra) => ?hole_3)
+
+notLTEFlips : {n, k : Nat} -> (contra : LTE n k -> Void) -> LTE k n
+notLTEFlips {n} {k} contra = case isEq n k of
+                                  (Yes prf) => notLTEandEqImpossible contra prf
+                                  (No contra1) => (case isGT n k of
+                                                        (Yes prf) => gTImpliesLTE prf
+                                                        (No contra2) => notLTEAndNotEqAndNotGTImpossible contra2 contra1 contra)

@@ -46,12 +46,3 @@ isTrue b = decEq b True
 
 isFalse : (b : Bool) -> Dec (b = False)
 isFalse b = decEq b False
-
-LT : (m : Integer) -> (n : Integer) -> Type
-LT m n = case isTrue (m < n) of
-               (Yes prf) => LT m n
-               (No contra) => assert_unreachable
-
-isLT : (m : Integer) -> (n : Integer) -> Dec (LT m n)
-isLT m n = case LT of
-                case_val => ?isLT_rhs
