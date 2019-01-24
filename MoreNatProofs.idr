@@ -86,9 +86,11 @@ isLT (S k) (S j) with (isLT k j)
   isLT (S k) (S j) | (Yes prf) = Yes (LTESucc prf)
   isLT (S k) (S j) | (No contra) = No (contra . fromLteSucc)
 
+
 eqImpliesLTE : (n = k) -> LTE n k
 eqImpliesLTE {n = Z} Refl = LTEZero
 eqImpliesLTE {n = (S (S (S k)))} Refl = LTESucc (LTESucc (LTESucc (eqImpliesLTE Refl)))
+eqImpliesLTE {n = (S k)} Refl = LTESucc (eqImpliesLTE Refl)
 
 eqABImpliesEqBA : (prf : n = k) -> k = n
 eqABImpliesEqBA Refl = Refl
@@ -99,6 +101,11 @@ notLTEandEqImpossible contra prf = eqImpliesLTE (eqABImpliesEqBA prf)
 
 gTImpliesLTE : (prf : GT n k) -> LTE k n
 gTImpliesLTE {n = (S left)} {k = (S right)} (LTESucc x) = LTESucc (gTImpliesLTE x)
+gTImpliesLTE {n = Z} {k = Z} LTEZero impossible
+gTImpliesLTE {n = Z} {k = Z} (LTESucc _) impossible
+gTImpliesLTE {n = Z} {k = (S _)} LTEZero impossible
+gTImpliesLTE {n = Z} {k = (S _)} (LTESucc _) impossible
+gTImpliesLTE {n = (S j)} {k = Z} (LTESucc x) = LTEZero
 
 notGTImpliesLTE : Not (GT a b) -> LTE a b
 notGTImpliesLTE {a = Z} _ = LTEZero

@@ -5,10 +5,6 @@ import MoreNatProofs
 %access public export
 %default total
 
-XOR : Bool -> Bool -> Bool
-XOR x y = x == y
-
-
 data ConsInt : Type where
   Negative : (n : Nat) -> ConsInt
   Positive : (n : Nat) -> ConsInt
