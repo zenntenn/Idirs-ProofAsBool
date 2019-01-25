@@ -99,13 +99,6 @@ Show ConsInt where
   show = castConsIntToString
 
 -- Proofs
-
-||| Proofs that `m` is not equal to `n`
-||| @ m the first number
-||| @ n the second number
-NotEq : (m, n : ConsInt) -> Type
-NotEq m n = Not (m=n)
-
 negSameNumberEq : {m : Nat} -> Negative m = Negative m
 negSameNumberEq {m = Z} = Refl
 negSameNumberEq {m = (S k)} = Refl
@@ -128,7 +121,7 @@ data Eq : (m, n : ConsInt) -> Type where
   EqZeroFirstNeg : Eq (Negative Z) (Positive Z)
   EqZeroBothPos : Eq (Positive Z) (Positive Z)
   EqSuccPos : Eq (Positive (S k)) (Positive (S k))
-  EqSuccNeg : Eq (Negative (S k)) (Negative (S k))
+  EqSuccNeg : Eq (Negative (S l)) (Negative (S l))
 
 NegZeroNotEqSucc : Eq (Negative 0) (Negative (S k)) -> Void
 NegZeroNotEqSucc EqZeroBothNeg impossible
@@ -245,18 +238,35 @@ isEq (Positive (S j)) (Positive (S k)) = case isEq j k of
                                               (Yes prf) => Yes (posSuccEq prf)
                                               (No contra) => No (posSuccNotEq contra)
 
+||| Proofs that `m` is not equal to `n`
+||| @ m the first number
+||| @ n the second number
+NotEq : (m, n : ConsInt) -> Type
+NotEq m n = Not (m `Eq` n)
+
+eQImplNotNotEq : (prf : Eq h i) -> (Eq h i -> Void) -> Void
+eQImplNotNotEq prf f = f prf
+
+notEqImplNotEq : (contra : Eq h i -> Void) -> Eq h i -> Void
+notEqImplNotEq contra x = contra x
+
+isNotEq : (h, i : ConsInt) -> Dec (h `NotEq` i)
+isNotEq h i = case isEq h i of
+                   (Yes prf) => No (eQImplNotNotEq prf)
+                   (No contra) => Yes (notEqImplNotEq contra)
 
 data LTE : (j, k : ConsInt) -> Type where
+  ||| -m <= +n
   LTENegPos : LTE (Negative m) (Positive n)
+  ||| -(m + 1) <= -0
   LTEBothNegWZero : LTE (Negative (S m)) (Negative Z)
+  ||| +0 <= +(n + 1)
   LTEBothPosWZero : LTE (Positive Z) (Positive (S n))
+  ||| left >= right -> -left <= -right
   LTEBothNegLTE : LTE right left -> LTE (Negative left) (Negative right)
-  ||| If n <= m, then n + 1 <= m + 1
-  LTEBothNegSucc : LTE (Negative left) (Negative right) -> LTE (Negative (S left)) (Negative (S right))
-  ||| If n <= m, then n + 1 <= m + 1
-  LTEBothPosSucc : LTE (Positive left) (Positive right) -> LTE (Positive (S left)) (Positive (S right))
-  LTEBothNegGTE : GTE left right -> LTE (Negative left) (Negative right)
+  ||| left >= right -> +left >= + right
   LTEBothPosLTE : Nat.LTE left right -> LTE (Positive left) (Positive right)
+  ||| j = k -> j <= k
   LTEBothEq : Eq j k -> LTE j k
 
 
@@ -296,18 +306,21 @@ posSuccNotLTEZero (LTEBothEq EqZeroBothPos) impossible
 posSuccNotLTEZero (LTEBothEq EqSuccPos) impossible
 posSuccNotLTEZero (LTEBothEq EqSuccNeg) impossible
 
+negSuccNotGTEImposs : (contra : GTE l k -> Void) -> LTE (Negative (S l)) (Negative (S k)) -> Void
+negSuccNotGTEImposs contra (LTEBothNegLTE (LTESucc x)) = contra x
+negSuccNotGTEImposs {l = l} {k = l} contra (LTEBothEq EqSuccNeg) = contra lteRefl
 
-
-
-
+posSuccNotLTEImposs : (contra : LTE l k -> Void) -> LTE (Positive (S l)) (Positive (S k)) -> Void
+posSuccNotLTEImposs contra (LTEBothPosLTE (LTESucc x)) = contra x
+posSuccNotLTEImposs {l = l} {k = l} contra (LTEBothEq EqSuccPos) = contra lteRefl
 
 isLTE : (i, j : ConsInt) -> Dec (i `LTE` j)
 isLTE (Negative Z) (Negative Z) = Yes (LTEBothEq EqZeroBothNeg)
 isLTE (Negative Z) (Negative (S k)) = No negZeroNotLTENegSucc
 isLTE (Negative (S j)) (Negative Z) = Yes LTEBothNegWZero
 isLTE (Negative (S l)) (Negative (S k)) = case isGTE l k of
-                                               (Yes prf) => Yes (LTEBothNegSucc (LTEBothNegGTE prf))
-                                               (No contra) => No (negNotGTENatImplNotLTE contra)
+                                               (Yes prf) => Yes (LTEBothNegLTE (LTESucc prf))
+                                               (No contra) => No (negSuccNotGTEImposs contra)
 isLTE (Negative n) (Positive k) = Yes LTENegPos
 isLTE (Positive Z) (Negative Z) = Yes (LTEBothEq EqZeroFirstPos)
 isLTE (Positive Z) (Negative (S k)) = No posZeroNotLTENegSucc
@@ -316,13 +329,81 @@ isLTE (Positive Z) (Positive Z) = Yes (LTEBothEq EqZeroBothPos)
 isLTE (Positive Z) (Positive (S k)) = Yes LTEBothPosWZero
 isLTE (Positive (S j)) (Positive Z) = No posSuccNotLTEZero
 isLTE (Positive (S l)) (Positive (S k)) = case isLTE l k of
-                                               (Yes prf) => Yes (LTEBothPosSucc (LTEBothPosLTE prf))
-                                               (No contra) => No ?posSuccCheckLTE_2
+                                               (Yes prf) => Yes (LTEBothPosLTE (LTESucc prf))
+                                               (No contra) => No (posSuccNotLTEImposs contra)
+
+GTE : ConsInt -> ConsInt -> Type
+GTE h i = LTE i h
+
+isGTE : (h, i : ConsInt) -> Dec (h `GTE` i)
+isGTE h i = isLTE i h
+
+data LT : (h, i : ConsInt) -> Type where
+  LTPosZeroPosSucc : LT (Positive Z) (Positive (S m))
+  LTNegPosSucc : LT (Negative (S m)) (Positive i)
+  LTNegLTSwap : Nat.LT m n -> LT (Negative n) (Negative m)
+  LTPosLT : Nat.LT m n -> LT (Positive m) (Positive n)
+  LTNotEqLTE : ConstructedInt.NotEq h i -> LTE h i -> LT h i
 
 
 
+notLTEImplNotEq : (contra : ConstructedInt.LTE h i -> Void) -> NotEq h i
+notLTEImplNotEq {h} {i} contra = case ConstructedInt.isEq h i of
+                                      (Yes prf) => void (contra (LTEBothEq prf))
+                                      (No contra1) => contra1
+
+lTELeftNotSuccOfRight : (x : LTE (S k) k) -> Void
+lTELeftNotSuccOfRight x = ?lTELeftNotSuccOfRight_rhs
+
+-- Basically a computer generated proof, with lots of case splits and searches.  Hopefully Idris 2 will do this sort of thing better.
+isLTAndIsEqImposs : (prf1 : Eq h i) -> (prf : LT h i) -> NotEq h i
+isLTAndIsEqImposs EqZeroBothNeg (LTNegLTSwap LTEZero) impossible
+isLTAndIsEqImposs EqZeroBothNeg (LTNegLTSwap (LTESucc _)) impossible
+isLTAndIsEqImposs EqZeroBothNeg (LTNotEqLTE f (LTEBothNegLTE LTEZero)) = \__pi_arg => f EqZeroBothNeg
+isLTAndIsEqImposs EqZeroBothNeg (LTNotEqLTE f (LTEBothEq EqZeroBothNeg)) = \__pi_arg => f EqZeroBothNeg
+isLTAndIsEqImposs EqZeroFirstPos (LTNotEqLTE f (LTEBothEq EqZeroFirstPos)) = \__pi_arg => f EqZeroFirstPos
+isLTAndIsEqImposs EqZeroFirstNeg (LTNotEqLTE f LTENegPos) = \__pi_arg => f EqZeroFirstNeg
+isLTAndIsEqImposs EqZeroFirstNeg (LTNotEqLTE f (LTEBothEq EqZeroFirstNeg)) = \__pi_arg => f EqZeroFirstNeg
+isLTAndIsEqImposs EqZeroBothPos (LTPosLT LTEZero) impossible
+isLTAndIsEqImposs EqZeroBothPos (LTPosLT (LTESucc _)) impossible
+isLTAndIsEqImposs EqZeroBothPos (LTNotEqLTE f (LTEBothPosLTE LTEZero)) = \__pi_arg => f EqZeroBothPos
+isLTAndIsEqImposs EqZeroBothPos (LTNotEqLTE f (LTEBothEq EqZeroBothPos)) = \__pi_arg => f EqZeroBothPos
+isLTAndIsEqImposs EqSuccPos (LTPosLT (LTESucc x)) = \__pi_arg => lTELeftNotSuccOfRight x
+isLTAndIsEqImposs EqSuccPos (LTNotEqLTE f (LTEBothPosLTE (LTESucc x))) = \__pi_arg => f EqSuccPos
+isLTAndIsEqImposs EqSuccPos (LTNotEqLTE f (LTEBothEq EqSuccPos)) = \__pi_arg => f EqSuccPos
+isLTAndIsEqImposs EqSuccNeg (LTNegLTSwap (LTESucc x)) = \__pi_arg => lTELeftNotSuccOfRight x
+isLTAndIsEqImposs EqSuccNeg (LTNotEqLTE f (LTEBothNegLTE x)) = \__pi_arg => f EqSuccNeg
+isLTAndIsEqImposs EqSuccNeg (LTNotEqLTE f (LTEBothEq EqSuccNeg)) = \__pi_arg => f EqSuccNeg
+
+lTImplNotEq : (prf : ConstructedInt.LT h i) -> NotEq h i
+lTImplNotEq {h} {i} prf = case isEq h i of
+                               (Yes prf1) => isLTAndIsEqImposs prf1 prf
+                               (No contra) => contra
 
 
+lTEAndLTImplNotEq : (prf : ConstructedInt.LTE h i) -> (x : LT h i) -> NotEq h i
+lTEAndLTImplNotEq {h} {i} prf x = case isLTE h i of
+                               (Yes prf) => ?lTEAndLTImplNotEq_rhs_1
+                               (No contra) => notLTEImplNotEq contra
+
+makeNotEq : (contra : NotEq h i -> Void) -> (prf : LTE h i) -> (x : LT h i) -> Eq h i -> Void
+makeNotEq contra prf x y = contra (lTEAndLTImplNotEq prf x)
+
+lteLtImplNotEq : (prf : ConstructedInt.LTE h i) -> (x : LT h i) -> NotEq h i
+lteLtImplNotEq {h} {i} prf x = case isNotEq h i of
+                            (Yes prf1) => prf1
+                            (No contra) => makeNotEq contra prf x
+
+lTNotNotEq : (contra : ConstructedInt.NotEq h i -> Void) -> (prf : LTE h i) -> LT h i -> Void
+lTNotNotEq contra prf x = contra (lteLtImplNotEq prf x)
+
+
+isLT : (h, i : ConsInt) -> Dec (h `LT` i)
+isLT h i = case isLTE h i of
+                (Yes prf) => (case isNotEq h i of
+                                   (Yes prf1) => Yes (LTNotEqLTE prf1 prf)
+                                   (No contra) => No (lTNotNotEq contra prf))
+                (No contra) => ?hole_2
 
 -- Testing with types
 
@@ -338,3 +419,19 @@ fourMinusNegativeTenIsNotNegativeSix EqZeroFirstNeg impossible
 fourMinusNegativeTenIsNotNegativeSix EqZeroBothPos impossible
 fourMinusNegativeTenIsNotNegativeSix EqSuccPos impossible
 fourMinusNegativeTenIsNotNegativeSix EqSuccNeg impossible
+
+fourMinusTenIsLessThanNegativeTwo : LTE ((Positive 4) - (Positive 10)) (Negative 2)
+fourMinusTenIsLessThanNegativeTwo = LTEBothNegLTE (LTESucc (LTESucc LTEZero))
+
+fourMinusTenIsNotLessThanNegativeFour : LTE ((Positive 4) - (Positive 5)) (Negative 4) -> Void
+fourMinusTenIsNotLessThanNegativeFour (LTEBothNegLTE (LTESucc LTEZero)) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothNegLTE (LTESucc (LTESucc _))) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothEq EqZeroBothNeg) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothEq EqZeroFirstPos) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothEq EqZeroFirstNeg) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothEq EqZeroBothPos) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothEq EqSuccPos) impossible
+fourMinusTenIsNotLessThanNegativeFour (LTEBothEq EqSuccNeg) impossible
+
+aNegativeTimesANegativeIsAPositive : LTE (Positive Z) ((Negative n) * (Negative m))
+aNegativeTimesANegativeIsAPositive = LTEBothPosLTE LTEZero
