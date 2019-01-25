@@ -37,7 +37,6 @@ smaller m n = case m <= n of
 sameIntegerCheckPrf : (prf : m = n) -> (n : Integer) -> Integer
 sameIntegerCheckPrf Refl n = n
 
-
 sameInteger : (m : Integer) -> (n : Integer) -> (m=n) -> Integer
 sameInteger m n prf = sameIntegerCheckPrf prf n
 

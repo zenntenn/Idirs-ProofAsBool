@@ -3,6 +3,10 @@ module MoreNatProofs
 %access public export
 %default total
 
+||| If a /= b then b /= a
+notEqReflexive : ((a = b) -> Void) -> (b = a) -> Void
+notEqReflexive f Refl = f Refl
+
 ||| A decision procedure for `DecEq Nat`
 ||| @ m the first number
 ||| @ n the second number
