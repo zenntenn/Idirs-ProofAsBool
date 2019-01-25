@@ -295,7 +295,6 @@ posSuccNotLTENeg (LTEBothEq EqZeroBothPos) impossible
 posSuccNotLTENeg (LTEBothEq EqSuccPos) impossible
 posSuccNotLTENeg (LTEBothEq EqSuccNeg) impossible
 
-
 posSuccNotLTEZero : LTE (Positive (S j)) (Positive 0) -> Void
 posSuccNotLTEZero (LTEBothPosLTE LTEZero) impossible
 posSuccNotLTEZero (LTEBothPosLTE (LTESucc _)) impossible
@@ -380,7 +379,7 @@ lTImplNotEq {h} {i} prf = case isEq h i of
 
 lTEAndLTImplNotEq : (prf : ConstructedInt.LTE h i) -> (x : LT h i) -> NotEq h i
 lTEAndLTImplNotEq {h} {i} prf x = case isLTE h i of
-                               (Yes prf) => ?lTEAndLTImplNotEq_rhs_1
+                               (Yes prf) => lTImplNotEq x
                                (No contra) => notLTEImplNotEq contra
 
 makeNotEq : (contra : NotEq h i -> Void) -> (prf : LTE h i) -> (x : LT h i) -> Eq h i -> Void
@@ -394,13 +393,36 @@ lteLtImplNotEq {h} {i} prf x = case isNotEq h i of
 lTNotNotEq : (contra : ConstructedInt.NotEq h i -> Void) -> (prf : LTE h i) -> LT h i -> Void
 lTNotNotEq contra prf x = contra (lteLtImplNotEq prf x)
 
+eQImpliesLTE : (h, i : ConsInt) -> (prf : Eq h i) -> LTE h i
+eQImpliesLTE (Negative Z) (Negative Z) EqZeroBothNeg = LTEBothNegLTE LTEZero
+eQImpliesLTE (Positive Z) (Negative Z) EqZeroFirstPos = LTEBothEq EqZeroFirstPos
+eQImpliesLTE (Negative Z) (Positive Z) EqZeroFirstNeg = LTENegPos
+eQImpliesLTE (Positive Z) (Positive Z) EqZeroBothPos = LTEBothPosLTE LTEZero
+eQImpliesLTE (Positive (S k)) (Positive (S k)) EqSuccPos = LTEBothPosLTE (LTESucc lTEkk)
+eQImpliesLTE (Negative (S l)) (Negative (S l)) EqSuccNeg = LTEBothNegLTE (LTESucc lTEkk)
+
+notEqAndNotLTEImplLT : (h, i : ConsInt) -> (contra1 : Eq h i -> Void) -> (contra : LTE h i -> Void) -> LT h i
+notEqAndNotLTEImplLT (Negative Z) (Negative Z) contra1 contra = LTNegLTSwap ?notEqAndNotLTEImplLT_rhs_6
+notEqAndNotLTEImplLT (Negative Z) (Negative (S k)) contra1 contra = ?notEqAndNotLTEImplLT_rhs_7
+notEqAndNotLTEImplLT (Negative (S j)) (Negative Z) contra1 contra = ?notEqAndNotLTEImplLT_rhs_2
+notEqAndNotLTEImplLT (Negative (S j)) (Negative (S k)) contra1 contra = ?notEqAndNotLTEImplLT_rhs_8
+notEqAndNotLTEImplLT (Negative Z) (Positive Z) contra1 contra = ?notEqAndNotLTEImplLT_rhs_4
+notEqAndNotLTEImplLT (Negative Z) (Positive (S k)) contra1 contra = ?notEqAndNotLTEImplLT_rhs_10
+notEqAndNotLTEImplLT (Negative (S j)) (Positive k) contra1 contra = ?notEqAndNotLTEImplLT_rhs_9
+notEqAndNotLTEImplLT (Positive n) (Negative k) contra1 contra = ?notEqAndNotLTEImplLT_rhs_1
+notEqAndNotLTEImplLT (Positive n) (Positive k) contra1 contra = ?notEqAndNotLTEImplLT_rhs_5
+
+notLTEImplLT : (contra : ConstructedInt.LTE h i -> Void) -> LT h i
+notLTEImplLT {h} {i} contra = case isEq h i of
+                                   (Yes prf) => void (contra (eQImpliesLTE h i prf))
+                                   (No contra1) => notEqAndNotLTEImplLT h i contra1 contra
 
 isLT : (h, i : ConsInt) -> Dec (h `LT` i)
 isLT h i = case isLTE h i of
                 (Yes prf) => (case isNotEq h i of
                                    (Yes prf1) => Yes (LTNotEqLTE prf1 prf)
                                    (No contra) => No (lTNotNotEq contra prf))
-                (No contra) => ?hole_2
+                (No contra) => Yes (notLTEImplLT contra)
 
 -- Testing with types
 

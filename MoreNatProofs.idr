@@ -130,3 +130,8 @@ lTESkk (S k) (LTESucc x) = lTESkk k x
 
 lTELeftNotSuccOfRight : (x : LTE (S k) k) -> Void
 lTELeftNotSuccOfRight {k} x = lTESkk k x
+
+||| k <= k
+lTEkk : Nat.LTE k k
+lTEkk {k = Z} = LTEZero
+lTEkk {k = (S k)} = LTESucc lTEkk
