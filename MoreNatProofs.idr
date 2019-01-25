@@ -122,3 +122,11 @@ notLTEFlips {n} {k} contra = case isEq n k of
                                   (No contra1) => (case isGT n k of
                                                         (Yes prf) => gTImpliesLTE prf
                                                         (No contra2) => gTImpliesLTE (void (contra (notGTImpliesLTE contra2))))
+
+lTESkk : (k : Nat) -> ((S k) `LTE` k) -> Void
+lTESkk Z LTEZero impossible
+lTESkk Z (LTESucc _) impossible
+lTESkk (S k) (LTESucc x) = lTESkk k x
+
+lTELeftNotSuccOfRight : (x : LTE (S k) k) -> Void
+lTELeftNotSuccOfRight {k} x = lTESkk k x

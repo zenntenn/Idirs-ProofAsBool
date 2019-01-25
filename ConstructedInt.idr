@@ -352,10 +352,7 @@ notLTEImplNotEq {h} {i} contra = case ConstructedInt.isEq h i of
                                       (Yes prf) => void (contra (LTEBothEq prf))
                                       (No contra1) => contra1
 
-lTELeftNotSuccOfRight : (x : LTE (S k) k) -> Void
-lTELeftNotSuccOfRight x = ?lTELeftNotSuccOfRight_rhs
-
--- Basically a computer generated proof, with lots of case splits and searches.  Hopefully Idris 2 will do this sort of thing better.
+-- Basically a computer generated proof, with lots of case splits and searches.  Hopefully Idris 2 will do this sort of thing better.  Alternatively, maybe I can find out what I'm doing wrong.
 isLTAndIsEqImposs : (prf1 : Eq h i) -> (prf : LT h i) -> NotEq h i
 isLTAndIsEqImposs EqZeroBothNeg (LTNegLTSwap LTEZero) impossible
 isLTAndIsEqImposs EqZeroBothNeg (LTNegLTSwap (LTESucc _)) impossible
